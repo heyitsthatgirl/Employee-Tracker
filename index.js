@@ -144,14 +144,13 @@ async function addDepartment() {
   VALUES  (${ID}, "${name}")`;
 
   db.query(addDep, (err, res) => {
-    if(err) throw err;
+    if (err) throw err;
     console.log("NEW DEPARTMENT ADDED");
     viewDepartments();
   });
 }
 // function to add a role
 async function addRole() {
-
   const rolePrompt = [
     {
       type: "input",
@@ -185,11 +184,58 @@ async function addRole() {
   VALUES (${id}, "${title}", "${salary}", ${department})`;
 
   db.query(addRole, (err, res) => {
-    if(err) throw err;
+    if (err) throw err;
     console.log("NEW ROLE ADDED");
     viewRoles();
   });
-  
+}
+
+// function to add an employee
+async function addEmployee() {
+
+  const employeePrompt = [
+    {
+      type: "input",
+      message: "Please provide an ID for the new Employee:",
+      name: "id",
+    },
+    {
+      type: "input",
+      message: "What is the new Employee's first name?",
+      name: "firstName",
+    },
+    {
+      type: "input",
+      message: "What is the new Employee's last name?",
+      name: "lastName",
+    },
+    {
+      type: "input",
+      message: "Employee Role ID:",
+      name: "role",
+    },
+    {
+      type: "input",
+      message: "Employee Manager ID:",
+      name: "manager",
+    },
+  ];
+
+  const newEmp = await inquirer.prompt(employeePrompt);
+  const id = newEmp.id;
+  const firstName = newEmp.firstName;
+  const lastName = newEmp.lastName;
+  const role = newEmp.role;
+  const manager = newEmp.manager;
+
+  const addEmp = `INSERT INTO employee (id, first_name, last_name, role_id, manager_id)
+  VALUES (${id}, "${firstName}", "${lastName}", ${role}, ${manager})`
+
+  db.query(addEmp, (err, res) => {
+    if(err) throw err,
+    console.log("NEW EMPLOYEE ADDED");
+    viewEmployees();
+  })
 }
 // Default response for any other request (Not Found)
 app.use((req, res) => {
