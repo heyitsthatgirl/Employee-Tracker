@@ -149,7 +149,48 @@ async function addDepartment() {
     viewDepartments();
   });
 }
+// function to add a role
+async function addRole() {
 
+  const rolePrompt = [
+    {
+      type: "input",
+      message: "Please provide an ID for the new Role:",
+      name: "id",
+    },
+    {
+      type: "input",
+      message: "Please provide a title for the new Role:",
+      name: "title",
+    },
+    {
+      type: "input",
+      message: "Please provide a salary for the new Role:",
+      name: "salary",
+    },
+    {
+      type: "input",
+      message: "Please identify the ID of the Department this Role belongs to:",
+      name: "department",
+    },
+  ];
+
+  const newRole = await inquirer.prompt(rolePrompt);
+  const id = newRole.id;
+  const title = newRole.title;
+  const salary = newRole.salary;
+  const department = newRole.department;
+
+  const addRole = `INSERT INTO roles (id, title, salary, department_id)
+  VALUES (${id}, "${title}", "${salary}", ${department})`;
+
+  db.query(addRole, (err, res) => {
+    if(err) throw err;
+    console.log("NEW ROLE ADDED");
+    viewRoles();
+  });
+  
+}
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
