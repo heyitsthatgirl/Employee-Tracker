@@ -92,6 +92,17 @@ function viewDepartments() {
   })
 }
 
+function viewRoles() {
+  const roles = `SELECT roles.title, roles.salary FROM roles`;
+  db.query(roles, (err, res) => {
+    if(err) throw err;
+    console.log('ALL ROLES:');
+    console.table(res);
+    beginPrompts();
+
+  })
+}
+
 
 // Default response for any other request (Not Found)
 app.use((req, res) => {
