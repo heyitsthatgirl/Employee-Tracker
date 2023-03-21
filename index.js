@@ -116,6 +116,40 @@ function viewEmployees() {
   });
 }
 
+// function to add a new department to the department table
+async function addDepartment() {
+  const depIdPrompt = [
+    {
+      type: "input",
+      message: "Please provide a new Department ID number",
+      name: "depID",
+    },
+  ];
+
+  const newID = await inquirer.prompt(depIdPrompt);
+  const ID = newID.depID;
+
+  const depNamePrompt = [
+    {
+      type: "input",
+      message: "What is the name of the new Department",
+      name: "depName",
+    },
+  ];
+
+  const newDep = await inquirer.prompt(depNamePrompt);
+  const name = newDep.depName;
+
+  const addDep = `INSERT INTO department (id, name)
+  VALUES  (${ID}, "${name}")`;
+
+  db.query(addDep, (err, res) => {
+    if(err) throw err;
+    console.log("NEW DEPARTMENT ADDED");
+    viewDepartments();
+  });
+}
+
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
