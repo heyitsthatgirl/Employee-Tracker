@@ -1,3 +1,4 @@
+// import necessary packages and modules
 const { query } = require("express");
 const express = require("express");
 const inquirer = require("inquirer");
@@ -23,17 +24,13 @@ const db = mysql.createConnection(
   console.log(`Connected to the company_db database.`)
 );
 
-// Query database to show employees' information
-// db.query("SELECT employee.first_name, employee.last_name, employee.role_id FROM employee INNER JOIN roles ON employee.role_id = roles.id", function (err, res) {
-//   console.log(res);
-//   console.table(res);
-// });
-
+// if the database is connected, start asking questions
 db.connect((err) => {
   if (err) throw err;
   beginPrompts();
 });
 
+// main menu prompts
 async function beginPrompts() {
   const begin = [
     {
@@ -79,30 +76,45 @@ async function beginPrompts() {
       db.end(); //need to figure out what this is supposed to do
       break;
   }
-};
+}
 
+// function to return all department names from the database
 function viewDepartments() {
   const departments = `SELECT department.name FROM department`;
   db.query(departments, (err, res) => {
     if (err) throw err;
-    console.log('ALL DEPARTMENTS:');
+    console.log("ALL DEPARTMENTS:");
     console.table(res);
     beginPrompts();
-    
-  })
+  });
 }
 
+// function to return all the roles from the database
 function viewRoles() {
   const roles = `SELECT roles.title, roles.salary FROM roles`;
   db.query(roles, (err, res) => {
-    if(err) throw err;
-    console.log('ALL ROLES:');
+    if (err) throw err;
+    console.log("ALL ROLES:");
     console.table(res);
     beginPrompts();
-
-  })
+  });
 }
 
+// function to return all the employees from the database
+function viewEmployees() {
+  const employees = `SELECT employee.id, employee.first_name, employee.last_name, roles.title, department.name AS department, roles.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+  FROM employee
+  LEFT JOIN employee manager on manager.id = employee.manager_id
+  INNER JOIN roles ON (roles.id = employee.role_id)
+  INNER JOIN department ON (department.id = roles.department_id)
+  ORDER BY employee.id;`;
+  db.query(employees, (err, res) => {
+    if (err) throw err;
+    console.log("ALL EMPLOYEES:");
+    console.table(res);
+    beginPrompts();
+  });
+}
 
 // Default response for any other request (Not Found)
 app.use((req, res) => {
