@@ -118,27 +118,22 @@ function viewEmployees() {
 
 // function to add a new department to the department table
 async function addDepartment() {
-  const depIdPrompt = [
+  const depPrompt = [
     {
       type: "input",
-      message: "Please provide a new Department ID number",
-      name: "depID",
+      message: "New Department ID number",
+      name: "id",
+    },
+    {
+      type: "input",
+      message: "New Department name:",
+      name: "name",
     },
   ];
 
-  const newID = await inquirer.prompt(depIdPrompt);
-  const ID = newID.depID;
-
-  const depNamePrompt = [
-    {
-      type: "input",
-      message: "What is the name of the new Department",
-      name: "depName",
-    },
-  ];
-
-  const newDep = await inquirer.prompt(depNamePrompt);
-  const name = newDep.depName;
+  const newDep = await inquirer.prompt(depPrompt);
+  const ID = newDep.id;
+  const name = newDep.name;
 
   const addDep = `INSERT INTO department (id, name)
   VALUES  (${ID}, "${name}")`;
@@ -154,22 +149,22 @@ async function addRole() {
   const rolePrompt = [
     {
       type: "input",
-      message: "Please provide an ID for the new Role:",
+      message: "New Role ID:",
       name: "id",
     },
     {
       type: "input",
-      message: "Please provide a title for the new Role:",
+      message: "New Role title:",
       name: "title",
     },
     {
       type: "input",
-      message: "Please provide a salary for the new Role:",
+      message: "New Role salary:",
       name: "salary",
     },
     {
       type: "input",
-      message: "Please identify the ID of the Department this Role belongs to:",
+      message: "New Role department ID:",
       name: "department",
     },
   ];
@@ -237,6 +232,17 @@ async function addEmployee() {
     viewEmployees();
   })
 }
+
+// // function to update an employee role
+// async function updateRole() {
+  
+//   const updatePrompt = [
+//     {
+//       type: "input",
+//       message: "Which role would you like to update?"
+//     }
+//   ]
+// }
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
