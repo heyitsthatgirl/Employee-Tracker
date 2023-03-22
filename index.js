@@ -181,57 +181,88 @@ async function addRole() {
 
 // function to add an employee
 async function addEmployee() {
-
   const employeePrompt = [
     {
       type: "input",
-      message: "What is the new Employee's first name?",
+      message: "Employee's first name:",
       name: "firstName",
     },
     {
       type: "input",
-      message: "What is the new Employee's last name?",
+      message: "Employee's last name:",
       name: "lastName",
     },
     {
       type: "input",
-      message: "Employee Role ID:",
+      message: "Employee role ID:",
       name: "role",
     },
     {
       type: "input",
-      message: "Employee Manager ID:",
+      message: "Employee manager ID:",
       name: "manager",
     },
   ];
 
   const newEmp = await inquirer.prompt(employeePrompt);
-  // const id = newEmp.id;
+
   const firstName = newEmp.firstName;
   const lastName = newEmp.lastName;
   const role = newEmp.role;
   const manager = newEmp.manager;
 
   const addEmp = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-  VALUES ("${firstName}", "${lastName}", ${role}, ${manager})`
+  VALUES ("${firstName}", "${lastName}", ${role}, ${manager})`;
 
   db.query(addEmp, (err, res) => {
-    if(err) throw err,
-    console.log("NEW EMPLOYEE ADDED");
+    if (err) throw (err, console.log("NEW EMPLOYEE ADDED"));
     viewEmployees();
-  })
+  });
 }
 
-// // function to update an employee role
-// async function updateRole() {
-  
-//   const updatePrompt = [
-//     {
-//       type: "input",
-//       message: "Which role would you like to update?"
-//     }
-//   ]
-// }
+// function to update an employee role
+async function updateRole() {
+  // WHEN I choose to update an employee role
+  // THEN I am prompted to select an employee to update and their new role and this information is updated in the database
+  const employeesList = `SELECT employee.first_name, employee.last_name, roles.title AS title, roles.salary AS salary FROM employee 
+  INNER JOIN roles ON (employee.role_id = roles.id)
+  ORDER BY roles.id`;
+  db.query(employeesList, async (err, res) => {
+    if (err) throw err;
+    console.table(res);
+    const updatePrompt = [
+      {
+        type: "list",
+        message: "Which Employee would you like to update?",
+        // this isnt working, working on it more tomorrow
+        choices: () => res.map((res) => res.first_name, res.last_name),
+        name: "employee",
+      },
+    ];
+
+    const userChoice = await inquirer.prompt(updatePrompt);
+
+    const employee = userChoice.employee;
+    console.log("You have chosen to update:", employee);
+  });
+
+  // const sql = `UPDATE reviews SET review = ? WHERE id = ?`;
+  // const params = [req.body.review, req.params.id];
+
+  // db.query(sql, params, (err, result) => {
+  //   if (err) {
+  //     res.status(400).json({ error: err.message });
+  //   } else if (!result.affectedRows) {
+  //     res.json({
+  //       message: 'Movie not found'
+  //     });
+  //   } else {
+  //     res.json({
+  //       message: 'success',
+  //       data: req.body,
+  //       changes: result.affectedRows
+  //     });
+}
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
@@ -240,5 +271,3 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-
