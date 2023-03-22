@@ -18,6 +18,6 @@ VALUES (1, "Salesperson", 100000, 1),
         (11, "Director of Operations", 200000, 4);
         
         INSERT INTO employee (id, first_name, last_name, role_id, manager_id)
-        VALUES (001, "Fozzy", "Bear", 5, null),
-        (002, "Gonzo", "de Great", 6, 001),
-        (003, "Camilla", "Pollo", 7, 002);
+        VALUES (1, "Fozzy", "Bear", 5, null),
+        (2, "Gonzo", "de Great", 6, 1),
+        (3, "Camilla", "Pollo", 7, 2);

@@ -80,7 +80,7 @@ async function beginPrompts() {
 
 // function to return all department names from the database
 function viewDepartments() {
-  const departments = `SELECT department.name FROM department`;
+  const departments = `SELECT * FROM department`;
   db.query(departments, (err, res) => {
     if (err) throw err;
     console.log("ALL DEPARTMENTS:");
@@ -91,7 +91,10 @@ function viewDepartments() {
 
 // function to return all the roles from the database
 function viewRoles() {
-  const roles = `SELECT roles.title, roles.salary FROM roles`;
+  const roles = `SELECT roles.id, roles.title, roles.salary, department.name AS department 
+  FROM roles
+  INNER JOIN department ON (department.id = roles.department_id)
+  ORDER BY roles.id`;
   db.query(roles, (err, res) => {
     if (err) throw err;
     console.log("ALL ROLES:");
@@ -121,22 +124,17 @@ async function addDepartment() {
   const depPrompt = [
     {
       type: "input",
-      message: "New Department ID number",
-      name: "id",
-    },
-    {
-      type: "input",
       message: "New Department name:",
       name: "name",
     },
   ];
 
   const newDep = await inquirer.prompt(depPrompt);
-  const ID = newDep.id;
+
   const name = newDep.name;
 
-  const addDep = `INSERT INTO department (id, name)
-  VALUES  (${ID}, "${name}")`;
+  const addDep = `INSERT INTO department (name)
+  VALUES  ("${name}")`;
 
   db.query(addDep, (err, res) => {
     if (err) throw err;
@@ -144,14 +142,10 @@ async function addDepartment() {
     viewDepartments();
   });
 }
+
 // function to add a role
 async function addRole() {
   const rolePrompt = [
-    {
-      type: "input",
-      message: "New Role ID:",
-      name: "id",
-    },
     {
       type: "input",
       message: "New Role title:",
@@ -170,13 +164,13 @@ async function addRole() {
   ];
 
   const newRole = await inquirer.prompt(rolePrompt);
-  const id = newRole.id;
+
   const title = newRole.title;
   const salary = newRole.salary;
   const department = newRole.department;
 
-  const addRole = `INSERT INTO roles (id, title, salary, department_id)
-  VALUES (${id}, "${title}", "${salary}", ${department})`;
+  const addRole = `INSERT INTO roles (title, salary, department_id)
+  VALUES ("${title}", "${salary}", ${department})`;
 
   db.query(addRole, (err, res) => {
     if (err) throw err;
@@ -189,11 +183,6 @@ async function addRole() {
 async function addEmployee() {
 
   const employeePrompt = [
-    {
-      type: "input",
-      message: "Please provide an ID for the new Employee:",
-      name: "id",
-    },
     {
       type: "input",
       message: "What is the new Employee's first name?",
@@ -217,14 +206,14 @@ async function addEmployee() {
   ];
 
   const newEmp = await inquirer.prompt(employeePrompt);
-  const id = newEmp.id;
+  // const id = newEmp.id;
   const firstName = newEmp.firstName;
   const lastName = newEmp.lastName;
   const role = newEmp.role;
   const manager = newEmp.manager;
 
-  const addEmp = `INSERT INTO employee (id, first_name, last_name, role_id, manager_id)
-  VALUES (${id}, "${firstName}", "${lastName}", ${role}, ${manager})`
+  const addEmp = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+  VALUES ("${firstName}", "${lastName}", ${role}, ${manager})`
 
   db.query(addEmp, (err, res) => {
     if(err) throw err,
@@ -252,10 +241,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// SELECT movies.movie_name AS movie, reviews.review
-// FROM reviews
-// LEFT JOIN movies
-// ON reviews.movie_id = movies.id
-// ORDER BY movies.movie_name;
 
-// FROM employee JOIN roles ON employee.role_id = roles.id
