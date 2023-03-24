@@ -75,6 +75,8 @@ async function beginPrompts() {
     case "Exit":
       db.end(); //need to figure out what this is supposed to do
       break;
+    default:
+      break;
   }
 }
 
@@ -85,7 +87,6 @@ function viewDepartments() {
     if (err) throw err;
     console.log("ALL DEPARTMENTS:");
     console.table(res);
-    beginPrompts();
   });
 }
 
@@ -99,7 +100,6 @@ function viewRoles() {
     if (err) throw err;
     console.log("ALL ROLES:");
     console.table(res);
-    beginPrompts();
   });
 }
 
@@ -115,8 +115,7 @@ function viewEmployees() {
     if (err) throw err;
     console.log("ALL EMPLOYEES:");
     console.table(res);
-    beginPrompts();
-  });
+    });
 }
 
 // function to add a new department to the department table
@@ -139,8 +138,7 @@ async function addDepartment() {
   db.query(addDep, (err, res) => {
     if (err) throw err;
     console.log("NEW DEPARTMENT ADDED");
-    viewDepartments();
-  });
+    });
 }
 
 // function to add a role
@@ -175,7 +173,6 @@ async function addRole() {
   db.query(addRole, (err, res) => {
     if (err) throw err;
     console.log("NEW ROLE ADDED");
-    viewRoles();
   });
 }
 
@@ -222,8 +219,7 @@ async function addEmployee() {
 
 // function to update an employee role
 async function updateRole() {
-  // WHEN I choose to update an employee role
-  // THEN I am prompted to select an employee to update and their new role and this information is updated in the database
+  
   const employeesList = `SELECT employee.first_name, employee.last_name, roles.title AS title, roles.salary AS salary FROM employee 
   INNER JOIN roles ON (employee.role_id = roles.id)
   ORDER BY roles.id`;
@@ -234,8 +230,7 @@ async function updateRole() {
       {
         type: "list",
         message: "Which Employee would you like to update?",
-        // this isnt working, working on it more tomorrow
-        choices: () => res.map((res) => res.first_name, res.last_name),
+        choices: () => res.map((res) => res.first_name + " " + res.last_name),
         name: "employee",
       },
     ];
@@ -244,25 +239,55 @@ async function updateRole() {
 
     const employee = userChoice.employee;
     console.log("You have chosen to update:", employee);
+
+    andThen(employee);
   });
-
-  // const sql = `UPDATE reviews SET review = ? WHERE id = ?`;
-  // const params = [req.body.review, req.params.id];
-
-  // db.query(sql, params, (err, result) => {
-  //   if (err) {
-  //     res.status(400).json({ error: err.message });
-  //   } else if (!result.affectedRows) {
-  //     res.json({
-  //       message: 'Movie not found'
-  //     });
-  //   } else {
-  //     res.json({
-  //       message: 'success',
-  //       data: req.body,
-  //       changes: result.affectedRows
-  //     });
 }
+
+async function andThen(employee) {
+  console.log(employee);
+
+  // query to return list of roles?
+  // if role is chosen update that employee's role to the new role in the database
+
+  db.query("SELECT roles.title FROM roles", async (err, res) => {
+    if (err) throw err;
+    const whichPrompt = [
+      {
+        type: "list",
+        message: "What role would you like to assign to this employee?",
+        name: "whatDo",
+        choices: () => res.map((res) => res.title),
+      },
+    ];
+    const choice = await inquirer.prompt(whichPrompt);
+    console.log(choice.whatDo);
+
+    const whatDo = choice.whatDo;
+
+    final(employee, whatDo);
+  });
+}
+
+async function final(employee, whatDo) {
+  // console.log(employee, whatDo);
+  const getID = `SELECT id FROM roles WHERE roles.title='${whatDo}'`;
+
+  db.query(getID, (err, res) => {
+    if (err) throw err;
+    const roleID = JSON.stringify(res[0].id);
+    console.log(roleID);
+    console.log(employee);
+
+    const update = `UPDATE employee SET role_id = ${roleID} WHERE employee.first_name = 'Fozzy'`;
+
+    db.query(update, (err, res) => {
+      if (err) throw err;
+      console.log(`${employee} updated successfully`);
+    });
+  });
+}
+
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
