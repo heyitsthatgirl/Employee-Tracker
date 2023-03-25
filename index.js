@@ -39,17 +39,21 @@ async function beginPrompts() {
       name: "begin",
       choices: [
         "View All Departments",
-        "View All Roles",
-        "View All Employees",
         "Add Department",
+        "View All Roles",
         "Add Role",
+        "View All Employees",
         "Add Employee",
         "Update An Employee Role",
         "Exit",
       ],
     },
   ];
+
+  // wait for user answer
   const userBegin = await inquirer.prompt(begin);
+
+  // invoke a function based on user answer
   switch (userBegin.begin) {
     case "View All Departments":
       viewDepartments();
@@ -73,7 +77,9 @@ async function beginPrompts() {
       updateRole();
       break;
     case "Exit":
-      db.end(); //need to figure out what this is supposed to do
+      // end connection to database if user chooses 'Exit'
+      db.end();
+      console.log("Thank you for using the Employee Tracker!");
       break;
     default:
       break;
@@ -87,6 +93,9 @@ function viewDepartments() {
     if (err) throw err;
     console.log("ALL DEPARTMENTS:");
     console.table(res);
+
+    // back to main menu
+    beginPrompts();
   });
 }
 
@@ -100,6 +109,9 @@ function viewRoles() {
     if (err) throw err;
     console.log("ALL ROLES:");
     console.table(res);
+
+    // back to the main menu
+    beginPrompts();
   });
 }
 
@@ -115,11 +127,15 @@ function viewEmployees() {
     if (err) throw err;
     console.log("ALL EMPLOYEES:");
     console.table(res);
-    });
+
+    // back to the main menu
+    beginPrompts();
+  });
 }
 
 // function to add a new department to the department table
 async function addDepartment() {
+  // prompt user for department name
   const depPrompt = [
     {
       type: "input",
@@ -128,128 +144,195 @@ async function addDepartment() {
     },
   ];
 
+  // wait for user answer
   const newDep = await inquirer.prompt(depPrompt);
 
   const name = newDep.name;
 
+  // query to add new department to database
   const addDep = `INSERT INTO department (name)
   VALUES  ("${name}")`;
 
   db.query(addDep, (err, res) => {
     if (err) throw err;
     console.log("NEW DEPARTMENT ADDED");
-    });
+
+    // back to main menu
+    beginPrompts();
+  });
 }
 
 // function to add a role
 async function addRole() {
-  const rolePrompt = [
-    {
-      type: "input",
-      message: "New Role title:",
-      name: "title",
-    },
-    {
-      type: "input",
-      message: "New Role salary:",
-      name: "salary",
-    },
-    {
-      type: "input",
-      message: "New Role department ID:",
-      name: "department",
-    },
-  ];
+  // query to get department names from database
+  chooseDep = `SELECT name FROM department`;
 
-  const newRole = await inquirer.prompt(rolePrompt);
-
-  const title = newRole.title;
-  const salary = newRole.salary;
-  const department = newRole.department;
-
-  const addRole = `INSERT INTO roles (title, salary, department_id)
-  VALUES ("${title}", "${salary}", ${department})`;
-
-  db.query(addRole, (err, res) => {
+  db.query(chooseDep, async (err, res) => {
     if (err) throw err;
-    console.log("NEW ROLE ADDED");
+
+    // prompt user for new role info
+    // use query results to define choices for department prompt
+    const rolePrompt = [
+      {
+        type: "input",
+        message: "New Role title:",
+        name: "title",
+      },
+      {
+        type: "input",
+        message: "New Role salary:",
+        name: "salary",
+      },
+      {
+        type: "list",
+        message: "New Role department:",
+        name: "department",
+        choices: () => res.map((res) => res.name),
+      },
+    ];
+
+    // wait for user answers
+    const newRole = await inquirer.prompt(rolePrompt);
+
+    const title = newRole.title;
+    const salary = newRole.salary;
+    const department = newRole.department;
+
+    // query to find id of chosen department
+    const findDepId = `SELECT id FROM department WHERE department.name = "${department}"`;
+
+    db.query(findDepId, (err, res) => {
+      if (err) throw err;
+      const roleDep = JSON.stringify(res[0].id);
+
+      // query to add new role to database
+      const addRole = `INSERT INTO roles (title, salary, department_id)
+  VALUES ("${title}", "${salary}", ${roleDep})`;
+
+      db.query(addRole, (err, res) => {
+        if (err) throw err;
+        console.log("NEW ROLE ADDED");
+
+        // back to main menu
+        beginPrompts();
+      });
+    });
   });
 }
 
 // function to add an employee
 async function addEmployee() {
-  const employeePrompt = [
-    {
-      type: "input",
-      message: "Employee's first name:",
-      name: "firstName",
-    },
-    {
-      type: "input",
-      message: "Employee's last name:",
-      name: "lastName",
-    },
-    {
-      type: "input",
-      message: "Employee role ID:",
-      name: "role",
-    },
-    {
-      type: "input",
-      message: "Employee manager ID:",
-      name: "manager",
-    },
-  ];
+  // get roles from the database
+  db.query(`SELECT roles.title FROM roles`, async (err, res) => {
+    if (err) throw err;
 
-  const newEmp = await inquirer.prompt(employeePrompt);
+    // use the results from the query to define choices in inquirer
+    const employeePrompt = [
+      {
+        type: "input",
+        message: "Employee's first name:",
+        name: "firstName",
+      },
+      {
+        type: "input",
+        message: "Employee's last name:",
+        name: "lastName",
+      },
+      {
+        type: "list",
+        message: "Employee role:",
+        name: "role",
+        choices: () => res.map((res) => res.title),
+      },
+    ];
 
-  const firstName = newEmp.firstName;
-  const lastName = newEmp.lastName;
-  const role = newEmp.role;
-  const manager = newEmp.manager;
+    db.query("SELECT first_name FROM employee", async (err, res) => {
+      if (err) throw err;
 
-  const addEmp = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-  VALUES ("${firstName}", "${lastName}", ${role}, ${manager})`;
+      const managerPrompt = [
+        {
+          type: "list",
+          message: "Employee manager:",
+          name: "manager",
+          choices: () => res.map((res) => res.first_name),
+        },
+      ];
 
-  db.query(addEmp, (err, res) => {
-    if (err) throw (err, console.log("NEW EMPLOYEE ADDED"));
-    viewEmployees();
+      // await the answers
+      const newEmp = await inquirer.prompt(employeePrompt);
+      const managerChoice = await inquirer.prompt(managerPrompt);
+
+      const firstName = newEmp.firstName;
+      const lastName = newEmp.lastName;
+      const role = newEmp.role;
+      const manager = managerChoice.manager;
+
+      // query to find the id of the role chosen from the prompts
+      const findRoleId = `SELECT roles.id FROM roles WHERE roles.title = "${role}"`;
+
+      db.query(findRoleId, (err, res) => {
+        if (err) throw err;
+        const roleID = JSON.stringify(res[0].id);
+
+        // query to get the employee id from the manager chosen
+        const findManId = `SELECT employee.id FROM employee WHERE employee.first_name = "${manager}"`;
+
+        db.query(findManId, (err, res) => {
+          if (err) throw err;
+
+          const managerId = JSON.stringify(res[0].id);
+
+          // query to add insert the new employee into the database
+          const addEmp = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+  VALUES ("${firstName}", "${lastName}", "${roleID}", ${managerId})`;
+
+          db.query(addEmp, (err, res) => {
+            if (err) throw err;
+            console.log("NEW EMPLOYEE ADDED");
+
+            // back to main menu
+            beginPrompts();
+          });
+        });
+      });
+    });
   });
 }
 
-// function to update an employee role
+// functions to update an employee role
+// updateRole lets user select which employee they want to update
 async function updateRole() {
-  
-  const employeesList = `SELECT employee.first_name, employee.last_name, roles.title AS title, roles.salary AS salary FROM employee 
+  // query to select the employees and their roles
+  const employeesList = `SELECT employee.first_name, employee.last_name, roles.title AS title FROM employee 
   INNER JOIN roles ON (employee.role_id = roles.id)
   ORDER BY roles.id`;
   db.query(employeesList, async (err, res) => {
     if (err) throw err;
+    // display the employees so user can review the data
     console.table(res);
     const updatePrompt = [
       {
         type: "list",
         message: "Which Employee would you like to update?",
-        choices: () => res.map((res) => res.first_name + " " + res.last_name),
+        choices: () => res.map((res) => res.first_name),
         name: "employee",
       },
     ];
 
+    // wait on answers from user
     const userChoice = await inquirer.prompt(updatePrompt);
 
     const employee = userChoice.employee;
     console.log("You have chosen to update:", employee);
 
+    // next function
     andThen(employee);
   });
 }
 
+// remembers the chosen employee and asks user which role they want to assign
 async function andThen(employee) {
-  console.log(employee);
-
-  // query to return list of roles?
-  // if role is chosen update that employee's role to the new role in the database
-
+  // query to get all the roles from the database
   db.query("SELECT roles.title FROM roles", async (err, res) => {
     if (err) throw err;
     const whichPrompt = [
@@ -260,30 +343,36 @@ async function andThen(employee) {
         choices: () => res.map((res) => res.title),
       },
     ];
+
+    // wait for user answer
     const choice = await inquirer.prompt(whichPrompt);
-    console.log(choice.whatDo);
 
     const whatDo = choice.whatDo;
 
+    // next function
     final(employee, whatDo);
   });
 }
 
+// takes in the chosen employee and the chosen role
+// gets the id of the chosen role and updates the employee.role_id in the database
 async function final(employee, whatDo) {
-  // console.log(employee, whatDo);
+  // query to get the id of the chosen role
   const getID = `SELECT id FROM roles WHERE roles.title='${whatDo}'`;
 
   db.query(getID, (err, res) => {
     if (err) throw err;
     const roleID = JSON.stringify(res[0].id);
-    console.log(roleID);
-    console.log(employee);
 
-    const update = `UPDATE employee SET role_id = ${roleID} WHERE employee.first_name = 'Fozzy'`;
+    // query to update the employee in the database
+    const update = `UPDATE employee SET role_id = ${roleID} WHERE employee.first_name = '${employee}'`;
 
     db.query(update, (err, res) => {
       if (err) throw err;
       console.log(`${employee} updated successfully`);
+
+      // back to the main menu
+      beginPrompts();
     });
   });
 }
@@ -293,6 +382,7 @@ app.use((req, res) => {
   res.status(404).end();
 });
 
+// shows app is listening
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Welcome to the Employee Tracker!");
 });
